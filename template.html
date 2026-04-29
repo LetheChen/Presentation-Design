@@ -771,7 +771,7 @@
         <button class="export-btn" id="export-pdf-btn">📄 PDF</button>
         <button class="export-btn" id="export-pptx-btn">📊 PPTX</button>
       </div>
-      <div class="export-hint" id="export-hint">需用 export_server.py 启动</div>
+      <div class="export-hint" id="export-hint">点击直接导出（需安装 Python + Node.js）</div>
     </div>
   </div>
   <button id="tweaks-toggle">⚙️ 调参</button>
@@ -1003,8 +1003,179 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 // ============================================================
-// EXPORT BUTTONS
+// EXPORT BUTTONS (零服务器 · 直接导出)
+// 策略：嵌入导出脚本为模板字符串 → 写临时文件 → Python执
+export → 解码下载
 // ============================================================
+
+const _findPython = () => {
+  const cmds = ['py', 'python', 'python3', 'C:\\Python\\python.exe'];
+  for (const c of cmds) {
+    try {
+      const out = require('child_process').execSync(c + ' --version', {timeout:5000, encoding:'utf8'});
+      if (out.includes('Python')) return c;
+    } catch {}
+  }
+  return null;
+};
+
+const _runExport = async (fmt) => {
+  const hint = document.getElementById('export-hint');
+  const PY = _findPython();
+  if (!PY) throw new Error('未找到 Python，请安装 Python 3.8+ 并加入 PATH');
+
+  // ── 构建 Node.js 导出脚本 ──
+  const nodeScript = fmt === 'pdf' ? `
+const { chromium } = require('playwright');
+const { PDFDocument } = require('pdf-lib');
+const fs = require('fs');
+const path = require('path');
+
+(async () => {
+  const inputFile = process.argv[2];
+  const outFile = process.argv[3];
+  const browser = await chromium.launch();
+  const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+  await page.goto('file://' + inputFile, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(2000);
+  await page.evaluate(() => {
+    ['#toolbar','#tweaks-panel','.nav-btn','.page-dots','#drawCanvas'].forEach(s =>
+      document.querySelectorAll(s).forEach(e => e.style.display='none'));
+  });
+  const slideCount = await page.evaluate(() => document.querySelectorAll('.slide').length || 1);
+  const merged = await PDFDocument.create();
+  for (let i = 0; i < slideCount; i++) {
+    if (i > 0) { await page.evaluate((idx) => { if(window.goToSlide) window.goToSlide(idx); }, i); await page.waitForTimeout(600); }
+    const buf = await page.pdf({ width:'1920px', height:'1080px', printBackground:true, margin:{top:0,right:0,bottom:0,left:0} });
+    const src = await PDFDocument.load(buf);
+    const copied = await merged.copyPages(src, src.getPageIndices());
+    copied.forEach(p => merged.addPage(p));
+  }
+  await browser.close();
+  const bytes = await merged.save();
+  fs.writeFileSync(outFile, bytes);
+  console.log('PDF_DONE:' + Buffer.from(bytes).toString('base64').slice(0,8));
+})();
+` : `
+const pptxgen = require('pptxgenjs');
+const { chromium } = require('playwright');
+const fs = require('fs');
+
+(async () => {
+  const inputFile = process.argv[2];
+  const outFile = process.argv[3];
+  const browser = await chromium.launch();
+  const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+  await page.goto('file://' + inputFile, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(2000);
+  await page.evaluate(() => {
+    ['#toolbar','#tweaks-panel','.nav-btn','.page-dots','#drawCanvas'].forEach(s =>
+      document.querySelectorAll(s).forEach(e => e.style.display='none'));
+  });
+  const slideCount = await page.evaluate(() => document.querySelectorAll('.slide').length || 1);
+  const pres = new pptxgen();
+  pres.layout = 'LAYOUT_WIDE';
+  for (let i = 0; i < slideCount; i++) {
+    if (i > 0) { await page.evaluate((idx) => { if(window.goToSlide) window.goToSlide(idx); }, i); await page.waitForTimeout(700); }
+    const img = await page.screenshot({ type:'png', fullPage:false });
+    const slide = pres.addSlide();
+    slide.addImage({ data:'data:image/png;base64,'+Buffer.from(img).toString('base64'), x:0, y:0, w:'100%', h:'100%' });
+  }
+  await browser.close();
+  await pres.writeFile({ fileName: outFile });
+  const bytes = fs.readFileSync(outFile);
+  console.log('PPTX_DONE:' + Buffer.from(bytes).toString('base64').slice(0,8));
+})();
+`;
+
+  const title = document.title.replace(/[\\/:*?"<>|]/g, '_');
+  const outName = title + '.' + fmt;
+  const tmpDir = require('os').tmpdir();
+  const mjsPath = path.join(tmpDir, '_corp_exp_' + Date.now() + '.mjs');
+  const outPath = path.join(tmpDir, '_corp_exp_out_' + Date.now() + '.' + fmt);
+
+  // 写临时 MJS 文件
+  require('fs').writeFileSync(mjsPath, nodeScript);
+
+  // 用 Python 执
+export function（读取临时文件路径，通过 Node 子进程运行脚本，把文件内容以 base64 打印到 stdout）
+  const pyCode = `
+import subprocess, sys, os, base64, json, tempfile, shutil
+mjs = sys.argv[1]
+out = sys.argv[2]
+fmt = sys.argv[3]
+html_file = sys.argv[4] if len(sys.argv) > 4 else ''
+tmp_out = out
+node = shutil.which('node') or 'node'
+
+# ── 向上搜索 skill 的 node_modules 目录 ──
+def find_node_modules(html_path):
+    if html_path and os.path.isabs(html_path):
+        d = os.path.dirname(html_path)
+        for _ in range(10):
+            nm = os.path.join(d, 'node_modules')
+            if os.path.isdir(nm): return d
+            pd = os.path.dirname(d)
+            if pd == d: break
+            d = pd
+    return os.path.expanduser('~/.openclaw/skills/corporate-presentation')
+
+skill_dir = find_node_modules(html_file)
+nm_path = os.path.join(skill_dir, 'node_modules')
+env = os.environ.copy()
+env['NODE_PATH'] = nm_path
+
+try:
+    r = subprocess.run(
+        [node, '-e', open(mjs).read() if os.path.exists(mjs) else mjs, html_file, tmp_out],
+        capture_output=True, text=True, timeout=120, env=env
+    )
+    if r.returncode != 0:
+        print(json.dumps({'error': r.stderr or '导出失败'}))
+        sys.exit(1)
+except subprocess.TimeoutExpired:
+    print(json.dumps({'error': '超时（120秒）'}))
+    sys.exit(1)
+except FileNotFoundError:
+    print(json.dumps({'error': '未找到 node，请先安装 Node.js'}))
+    sys.exit(1)
+if not os.path.exists(tmp_out):
+    print(json.dumps({'error': '输出文件未生成'}))
+    sys.exit(1)
+with open(tmp_out,'rb') as f:
+    data = base64.b64encode(f.read()).decode('utf-8')
+os.unlink(mjs)
+os.unlink(tmp_out)
+print(json.dumps({'data': data}))
+`;
+  const pyPath = path.join(tmpDir, '_corp_exp_py_' + Date.now() + '.py');
+  require('fs').writeFileSync(pyPath, pyCode);
+
+  const {execSync} = require('child_process');
+  const _htmlPath = () => { const h = location.href; return h.startsWith('file://') ? h.slice(8).replace(/\//g,'\\') : h; };
+  let result;
+  try {
+    const out = execSync(`${PY} "${pyPath}" "${mjsPath}" "${outPath}" "${fmt}" "${_htmlPath()}"`, {timeout:130000, encoding:'utf8', cwd: tmpDir});
+    result = JSON.parse(out.trim());
+  } finally {
+    try { require('fs').unlinkSync(pyPath); } catch {}
+  }
+
+  if (result.error) throw new Error(result.error);
+  return { data: result.data, name: outName };
+};
+
+const _makeDownload = (b64, name) => {
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  const blob = new Blob([arr], { type: name.endsWith('.pdf') ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+};
+
 const _exportBtn = (id, fmt) => {
   const btn = document.getElementById(id);
   if (!btn) return;
@@ -1013,20 +1184,11 @@ const _exportBtn = (id, fmt) => {
     btn.disabled = true;
     btn.textContent = '导出中...';
     try {
-      const resp = await fetch(`/export/${fmt}`, { method: 'POST' });
-      if (!resp.ok) throw new Error((await resp.json()).error || '导出失败');
-      const blob = await resp.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = document.title.replace(/[\\/:*?"<>|]/g, '_') + (fmt === 'pdf' ? '.pdf' : '.pptx');
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const { data, name } = await _runExport(fmt);
+      _makeDownload(data, name);
       if (hint) { hint.textContent = '✅ 导出成功'; hint.style.color = '#38a169'; }
     } catch (e) {
-      if (hint) { hint.textContent = '❌ ' + (e.message || '请用 export_server.py 启动'); hint.style.color = '#e53e3e'; }
+      if (hint) { hint.textContent = '❌ ' + (e.message || '导出失败'); hint.style.color = '#e53e3e'; }
     } finally {
       btn.disabled = false;
       btn.textContent = fmt === 'pdf' ? '📄 PDF' : '📊 PPTX';

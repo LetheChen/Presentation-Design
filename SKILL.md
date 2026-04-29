@@ -24,7 +24,7 @@ metadata:
         "kind": "runtime",
         "nodes": ["node"],
         "packages": ["playwright", "pdf-lib", "pptxgenjs"],
-        "scripts": ["export_corporate_pdf.mjs", "export_corporate_pptx.mjs", "export_server.py"],
+        "scripts": ["export_corporate_pdf.mjs", "export_corporate_pptx.mjs", "export-helper.py"],
         "installCommand": "npm install && npx playwright install chromium --with-deps"
       }
     }
@@ -284,34 +284,26 @@ const { chromium } = require('playwright');
 
 ### 使用方式
 
-1. **浏览器打开** HTML 文件
+1. **浏览器打开** HTML 文件（直接双击即可，无需任何服务器）
 2. **`← →` 翻页**，**`Esc`** 切换标注工具栏，**`F`** 全屏演示
 3. **⚙️ 调参**（右下角按钮）：配色方案 / 字号密度 / 显示模式 / **导出按钮**
 
-### 导出功能（⚠️ 需要启动 export_server.py）
+### 导出功能（零服务器，点击即导出）
 
-导出的 **PDF / PPTX 按钮**在调参面板里。要使用导出功能，需要用 `export_server.py` 启动服务：
+导出的 **PDF / PPTX 按钮**在调参面板里。点击按钮即可直接下载，全程无需任何服务器进程。
 
+**前置条件（一次性配置）：**
 ```bash
-# 1. 进入 skill 目录
-cd Presentation-Design
-
-# 2. 安装依赖（只需一次）
+# 安装 skill 后，进入目录安装依赖
+cd ~/.openclaw/skills/Presentation-Design
 npm install
 npx playwright install chromium --with-deps
-
-# 3. 启动导出服务器（指定你的 HTML 文件）
-python export_server.py "C:\Users\GS11DZ02279\.openclaw\workspace\RAG技术全景指南_演示.html"
-
-# 4. 服务器启动后自动打开浏览器，点击 ⚙️ 调参 → 导出PDF/PPTX
 ```
 
-**导出服务器参数：**
-```bash
-python export_server.py <html文件> [--port 8765] [--browser edge|chrome|none] [--no-open]
-```
+> 导出时 HTML 文件内部会自动调用 Python + Node.js 执行 Playwright 渲染，生成文件后自动触发下载。
+> 如点击导出按钮无反应，请确认本地已安装 **Python 3.8+** 和 **Node.js 18+**。
 
-### 手动导出（不使用服务器）
+### 手动导出（可选）
 
 也可以手动调用导出脚本：
 
@@ -323,6 +315,7 @@ node export_corporate_pdf.mjs --input "演示.html" --out "输出.pdf"
 
 **PPTX 导出：**
 ```bash
+cd Presentation-Design
 node export_corporate_pptx.mjs --input "演示.html" --out "输出.pptx"
 ```
 
@@ -335,14 +328,14 @@ node export_corporate_pptx.mjs --input "演示.html" --out "输出.pptx"
 
 ---
 
-## 📁 关联文件
+## 📁 关联文件（更新版）
 
 | 文件 | 说明 |
 |------|------|
-| `template.html` | HTML 模板（含全部样式、交互、导出按钮） |
-| `export_corporate_pdf.mjs` | PDF 导出脚本（Playwright + pdf-lib） |
-| `export_corporate_pptx.mjs` | PPTX 导出脚本（Playwright + pptxgenjs） |
-| `export_server.py` | 导出服务器（Python，内嵌 HTTP 服务 + 导出 API） |
+| `template.html` | HTML 模板（含固化 CSS/JS，**内嵌导出逻辑**） |
+| `export_corporate_pdf.mjs` | PDF 导出脚本（手动导出用） |
+| `export_corporate_pptx.mjs` | PPTX 导出脚本（手动导出用） |
+| `export-helper.py` | 导出辅助脚本（HTML 内嵌调用，无需独立启动） |
 | `package.json` | 依赖配置 |
 | `SKILL.md` | 本文件 |
 
@@ -362,7 +355,7 @@ git commit -m "feat: Presentation Design v1.0.0
 - 企业汇报演示生成器，支持画笔标注/配色切换/全屏
 - 内置 PDF 导出（Playwright + pdf-lib）
 - 内置 PPTX 导出（Playwright + pptxgenjs）
-- export_server.py 支持浏览器内一键导出
+- export-helper.py 支持 HTML 内嵌直接导出（零服务器）
 - 5套配色方案 + 3档字号密度
 - 自动化 Playwright 验证"
 ```

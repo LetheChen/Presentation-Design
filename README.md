@@ -1,6 +1,6 @@
 # 🏢 Presentation Design
 
-将文本内容快速转换为专业的企业汇报风格 HTML 演示页，支持画笔标注、配色切换、全屏演示，以及 **PDF / PPTX 一键导出**。
+将文本内容快速转换为专业的企业汇报风格 HTML 演示页，支持画笔标注、配色切换、全屏演示，以及 **PDF / PPTX 一键导出**（无需任何服务器，开箱即用）。
 
 ---
 
@@ -13,31 +13,34 @@
 | 🎨 **5 套配色** | 企业蓝 / 极简青 / 暖金雅 / 深空黑 / 墨绿稳，实时切换 |
 | 📏 **3 档字号** | 紧凑 / 标准 / 宽松，实时切换 |
 | ⛶ **全屏演示** | 按 `F` 或点击按钮进入全屏 |
-| 📄 **PDF 导出** | 矢量格式，文字可搜索/复制 |
-| 📊 **PPTX 导出** | 截图背景 + 透明文字层，双击可直接编辑 |
+| 📄 **PDF 导出** | 矢量格式，文字可搜索/复制，直接下载 |
+| 📊 **PPTX 导出** | 截图背景 + 透明文字层，双击可直接编辑，直接下载 |
 
 ---
 
 ## 🚀 快速开始
 
-### 安装依赖
+### 首次安装（一次性）
 
 ```bash
+# 安装 skill
+npx skills add LetheChen/Presentation-Design
+
+# 进入目录安装依赖
+cd ~/.openclaw/skills/Presentation-Design
 npm install
 npx playwright install chromium --with-deps
 ```
 
-### 启动导出服务器
+> **`npx skills add` 不会自动运行 npm install**，所以需要手动执行上面的 `npm install` 和 `playwright install` 步骤（只需一次）。
 
-```bash
-# 进入目录
-cd Presentation-Design
+### 使用导出功能
 
-# 启动服务器（自动打开浏览器）
-python export_server.py /path/to/your/presentation.html
-```
+1. 用 Presentation Design skill 生成 HTML 演示文件
+2. 双击用浏览器打开 HTML 文件
+3. 点击右下角 **⚙️ 调参** → **📄 PDF** 或 **📊 PPTX**，直接下载
 
-服务器启动后，点击右下角 **⚙️ 调参** 按钮 → **📄 PDF** 或 **📊 PPTX** 即可下载。
+> 导出功能需要本地安装 **Python 3.8+** 和 **Node.js**（用于调用 Playwright 渲染）。
 
 ---
 
@@ -46,10 +49,10 @@ python export_server.py /path/to/your/presentation.html
 ```
 Presentation-Design/
 ├── SKILL.md                    # OpenClaw skill 定义文件
-├── template.html               # HTML 演示模板（含全部样式和交互）
-├── export_corporate_pdf.mjs   # PDF 导出脚本
-├── export_corporate_pptx.mjs  # PPTX 导出脚本
-├── export_server.py            # 导出服务器（Python HTTP 服务）
+├── template.html               # HTML 演示模板（含全部样式、交互、导出逻辑）
+├── export_corporate_pdf.mjs   # PDF 导出脚本（手动导出用）
+├── export_corporate_pptx.mjs   # PPTX 导出脚本（手动导出用）
+├── export-helper.py            # 导出辅助脚本（HTML 内嵌调用）
 ├── package.json                # 依赖配置
 └── README.md                   # 本文件
 ```
@@ -63,7 +66,8 @@ Presentation-Design/
 | `playwright` | ^1.52.0 | 浏览器渲染/截图 |
 | `pdf-lib` | ^1.17.1 | PDF 合并生成 |
 | `pptxgenjs` | ^3.12.0 | PPTX 生成 |
-| `Python 3` | 3.8+ | 导出服务器 |
+| `Python 3` | 3.8+ | 启动 Playwright 渲染（必须） |
+| `Node.js` | 18+ | 运行导出脚本（必须） |
 
 ---
 
@@ -90,26 +94,24 @@ Presentation-Design/
 
 ---
 
-## 📤 手动导出（不使用服务器）
+## 📤 手动导出（可选）
+
+不想用 HTML 内嵌导出按钮？也可以手动调用脚本：
 
 ```bash
 # PDF 导出
-node export_corporate_pdf.mjs --input "your_slides.html" --out "output.pdf"
+node export_corporate_pdf.mjs --input "演示.html" --out "输出.pdf"
 
 # PPTX 导出
-node export_corporate_pptx.mjs --input "your_slides.html" --out "output.pptx"
+node export_corporate_pptx.mjs --input "演示.html" --out "输出.pptx"
 ```
 
 ---
 
-## 🤖 OpenClaw Skill 安装
+## 🤖 OpenClaw Skill 安装命令
 
 ```bash
-# 使用 npx 安装（推荐）
 npx skills add LetheChen/Presentation-Design
-
-# 或使用 clawdhub
-clawdhub install Presentation-Design
 ```
 
 ---
