@@ -691,8 +691,7 @@
     #drawCanvas, .key-hint, #fullscreenBtn, .export-btn-area { display: none !important; }
   }
 </style>
-<!-- PPTX generation (browser-native, no server) -->
-<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+
 </head>
 <body>
 
@@ -785,7 +784,7 @@
         <button class="export-btn" id="export-pdf-btn">📄 PDF</button>
         <button class="export-btn" id="export-pptx-btn">📊 PPTX</button>
       </div>
-      <div class="export-hint" id="export-hint">PDF=打印另存 / PPTX=直接下载</div>
+      <div class="export-hint" id="export-hint">点击下方按钮导出（需先启动导出服务器）</div>
     </div>
   </div>
   <button id="tweaks-toggle">⚙️ 调参</button>
@@ -1017,74 +1016,32 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 // ============================================================
-// EXPORT BUTTONS (方案A · 零服务器 · 纯浏览器)
-// PDF  → window.print() 浏览器打印对话框
-// PPTX → pptxgenjs(CDN) + html2canvas(CDN) 截图生成，直接下载
-// ============================================================
-
-// ── PPTX 导出 ──
+// ── PPTX 导出（Node.js 脚本 · 可编辑 PPTX）──
 async function _exportPPTX() {
   const hint = document.getElementById('export-hint');
   const title = document.title.replace(/[\\/:*?"<>|]/g, '_') || '演示文稿';
-  const slides = document.querySelectorAll('.slide');
-  if (!slides.length) { throw new Error('未找到幻灯片'); }
 
-  // 隐藏所有 UI 层，准备截图
-  const uiEls = [];
-  ['#toolbar','#tweaks-panel','.nav-btn','.page-dots','#drawCanvas','.key-hint'].forEach(sel => {
-    document.querySelectorAll(sel).forEach(el => { uiEls.push([el, el.style.display]); el.style.display = 'none'; });
-  });
-  const tweaksOpen = document.getElementById('tweaks-panel');
-  const tweaksWasOpen = tweaksOpen && tweaksOpen.style.display !== 'none';
-  if (tweaksWasOpen) tweaksOpen.style.display = 'none';
+  hint.textContent = '正在连接导出服务器...';
+  hint.style.color = '';
 
-  // 等 UI 隐藏完成
-  await new Promise(r => setTimeout(r, 300));
-
-  // 加载 html2canvas（CDN）
-  if (!window.html2canvas) {
-    await new Promise((ok, fail) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-      s.onload = ok; s.onerror = fail; document.head.appendChild(s);
-    });
+  // 先检查导出服务器是否在运行
+  try {
+    const resp = await fetch('http://localhost:8765/', { method: 'HEAD', cache: 'no-store' });
+    // 服务器存在，调用导出接口
+    const downloadResp = await fetch('http://localhost:8765/export/pptx');
+    if (!downloadResp.ok) throw new Error('导出失败: ' + downloadResp.status);
+    const blob = await downloadResp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = title + '.pptx'; a.click();
+    URL.revokeObjectURL(url);
+    hint.textContent = '✅ 导出成功';
+    hint.style.color = '#38a169';
+  } catch(e) {
+    // 服务器未启动，显示手动导出指引
+    hint.innerHTML = '<span style="color:#e53e3e">❌ 导出服务器未运行</span><br><span style="font-size:10px;color:#718096">请先运行以下命令后再点导出：</span><br><code style="font-size:11px;color:#2d3748;background:#f7fafc;padding:2px 6px;border-radius:4px;word-break:break-all">python &lt;skill目录&gt;/export_server.py &quot;' + title + '.html&quot;</code>';
+    hint.style.color = '';
   }
-
-  const PptxGenJS = window.PptxGenJS || window.pptxgen;
-  if (!PptxGenJS) throw new Error('pptxgenjs 加载失败，请检查网络');
-
-  const pres = new PptxGenJS();
-  pres.layout = 'LAYOUT_WIDE'; // 13.33×7.5 inch
-  pres.title = title;
-  pres.author = 'Presentation Design';
-
-  const W = 1280, H = 720;
-
-  for (let i = 0; i < slides.length; i++) {
-    if (i > 0 && window.goToSlide) window.goToSlide(i);
-    await new Promise(r => setTimeout(r, 500)); // 等渲染
-
-    const canvas = await html2canvas(slides[i], {
-      width: W, height: H,
-      scale: 1,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: '#ffffff',
-      logging: false,
-    });
-
-    const imgData = canvas.toDataURL('image/png', 0.95);
-    const slide = pres.addSlide();
-    slide.addImage({ data: imgData, x: 0, y: 0, w: '100%', h: '100%' });
-    if (hint) hint.textContent = `处理中 ${i + 1}/${slides.length}`;
-  }
-
-  // 恢复 UI
-  uiEls.forEach(([el, orig]) => el.style.display = orig);
-  if (tweaksWasOpen) tweaksOpen.style.display = '';
-  if (window.goToSlide) window.goToSlide(0);
-
-  await pres.writeFile({ fileName: title + '.pptx' });
 }
 
 // ── PDF 导出 ──
