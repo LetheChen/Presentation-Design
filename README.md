@@ -1,8 +1,6 @@
 # 🏢 Presentation Design
 
-将文本内容快速转换为专业的企业汇报风格 HTML 演示页，支持画笔标注、配色切换、全屏演示，以及 **PDF / PPTX 一键导出**。
-
-**导出零配置**：双击 HTML 文件 → 点导出按钮 → 直接下载，无需安装任何软件。
+将文本内容快速转换为专业的企业汇报风格 HTML 演示页，支持画笔标注、配色切换、全屏演示。
 
 ---
 
@@ -15,20 +13,20 @@
 | 🎨 **5 套配色** | 企业蓝 / 极简青 / 暖金雅 / 深空黑 / 墨绿稳，实时切换 |
 | 📏 **3 档字号** | 紧凑 / 标准 / 宽松，实时切换 |
 | ⛶ **全屏演示** | 按 `F` 或点击按钮进入全屏 |
-| 📄 **PDF 导出** | 点击"PDF"→浏览器打印对话框→另存为PDF，零配置 |
-| 📊 **PPTX 导出** | 点击"PPTX"→自动生成→直接下载，双击可在PowerPoint编辑 |
+| 📄 **PDF 导出** | 通过 export_server.py 服务器导出（Playwright 渲染） |
+| 📊 **PPTX 导出** | 通过 export_server.py 服务器导出（截图背景 + 透明文字层，可直接编辑） |
 
 ---
 
-## 🚀 立即使用（无需安装任何东西）
+## 🚀 立即使用
 
-1. **生成 HTML**：告诉 OpenClaw「用 Presentation Design skill 生成演示页」，得到一个 `.html` 文件
+1. **生成 HTML**：告诉 OpenClaw「用 Presentation Design skill 生成演示页」
 2. **双击打开**：用浏览器（Chrome / Edge 推荐）打开 HTML 文件
-3. **点导出**：
-   - **PDF**：点「📄 PDF」→ 浏览器弹出打印框 → 选「另存为 PDF」→ 保存
-   - **PPTX**：点「📊 PPTX」→ 等待生成 → 自动下载 → 用 PowerPoint 打开
-
-> PPTX 导出需要联网（自动从 CDN 加载 pptxgenjs），PDF 导出完全离线可用。
+3. **启动导出服务器**（如需导出文件）：
+   ```bash
+   python export_server.py "<HTML文件路径>"
+   ```
+   服务器启动后会自动打开浏览器，访问地址 `http://localhost:8765/...`
 
 ---
 

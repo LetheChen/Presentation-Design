@@ -43,8 +43,8 @@ metadata:
 
 - HTML 模板和功能代码完整内置，换主题只换内容，交互功能永远稳定
 - 提供 5 套配色方案 + 3 档字号密度，实时切换，立等可取
+- 导出需启动 export_server.py（服务器模式），不支持点击即导出
 - 完整的设计确认流程：需求 → 方向确认 → v0草稿 → 完整生成 → **自动化验证** → 交付
-- 导出按钮集成在 HTML 内，点击即触发下载
 
 ---
 
@@ -262,21 +262,19 @@ const { chromium } = require('playwright');
   // 2. 全屏按钮存在
   const fsBtn = await page.evaluate(() => !!document.getElementById('fullscreenBtn'));
 
-  // 3. 导出按钮存在
-  const pdfBtn = await page.evaluate(() => !!document.getElementById('export-pdf-btn'));
-  const pptxBtn = await page.evaluate(() => !!document.getElementById('export-pptx-btn'));
+  // 3. 幻灯片数量
 
   // 4. 幻灯片数量
   const slideCount = await page.evaluate(() => document.querySelectorAll('.slide').length);
 
   await browser.close();
   const pass = errors.length === 0 && color === '#0d5b7a' && fsBtn && slideCount > 0;
-  console.log(pass ? '✅ PASS' : '❌ FAIL', '| Errors:', errors.length, '| --primary:', color, '| Slides:', slideCount, '| PDF btn:', pdfBtn, '| PPTX btn:', pptxBtn);
+  console.log(pass ? '✅ PASS' : '❌ FAIL', '| Errors:', errors.length, '| --primary:', color, '| Slides:', slideCount, '| fullscreenBtn:', fsBtn);
   process.exit(pass ? 0 : 1);
 })();
 ```
 
-**通过标准**：`errors=0` + `--primary=#0d5b7a` + `fsBtn=true` + `slideCount>0` + `pdfBtn=true` + `pptxBtn=true`
+**通过标准**：`errors=0` + `--primary=#0d5b7a` + `fsBtn=true` + `slideCount>0`
 
 ---
 
@@ -284,38 +282,38 @@ const { chromium } = require('playwright');
 
 ### 使用方式
 
-1. **浏览器打开** HTML 文件（直接双击即可，无需任何服务器）
+1. **浏览器打开** HTML 文件（直接双击即可）
 2. **`← →` 翻页**，**`Esc`** 切换标注工具栏，**`F`** 全屏演示
-3. **⚙️ 调参**（右下角按钮）：配色方案 / 字号密度 / 显示模式 / **导出按钮**
+3. **⚙️ 调参**（右下角按钮）：配色方案 / 字号密度 / 显示模式
 
-### 导出功能（零服务器，点击即导出）
+### 导出功能（需启动导出服务器）
 
-导出的 **PDF / PPTX 按钮**在调参面板里。点击按钮即可直接下载，全程无需任何服务器进程。
+HTML 文件**不含内置导出按钮**。要导出 PPTX/PDF，需手动启动服务器：
 
-**前置条件（一次性配置）：**
 ```bash
-# 安装 skill 后，进入目录安装依赖
-cd ~/.openclaw/skills/Presentation-Design
-npm install
-npx playwright install chromium --with-deps
+# 进入 skill 目录（OpenClaw 运行时目录）
+cd "C:\Users\GS11DZ02279\.openclaw\skills\corporate-presentation"
+
+# 或使用 workspace 备份目录
+cd "C:\Users\GS11DZ02279\.openclaw\workspace\skills\Presentation_Design"
+
+# 启动导出服务器（自动打开浏览器）
+python export_server.py "<你的HTML文件路径>" [--port 8765] [--browser edge]
 ```
 
-> 导出时 HTML 文件内部会自动调用 Python + Node.js 执行 Playwright 渲染，生成文件后自动触发下载。
-> 如点击导出按钮无反应，请确认本地已安装 **Python 3.8+** 和 **Node.js 18+**。
+服务器启动后，在浏览器中点击 ⚙️ 调参 → **PDF** 或 **PPTX** 即可下载。
 
 ### 手动导出（可选）
 
-也可以手动调用导出脚本：
+不使用服务器时，也可手动调用脚本：
 
 **PDF 导出：**
 ```bash
-cd Presentation-Design
 node export_corporate_pdf.mjs --input "演示.html" --out "输出.pdf"
 ```
 
 **PPTX 导出：**
 ```bash
-cd Presentation-Design
 node export_corporate_pptx.mjs --input "演示.html" --out "输出.pptx"
 ```
 
@@ -328,14 +326,15 @@ node export_corporate_pptx.mjs --input "演示.html" --out "输出.pptx"
 
 ---
 
-## 📁 关联文件（更新版）
+## 📁 关联文件
 
 | 文件 | 说明 |
 |------|------|
-| `template.html` | HTML 模板（含固化 CSS/JS，**内嵌导出逻辑**） |
-| `export_corporate_pdf.mjs` | PDF 导出脚本（手动导出用） |
-| `export_corporate_pptx.mjs` | PPTX 导出脚本（手动导出用） |
-| `export-helper.py` | 导出辅助脚本（HTML 内嵌调用，无需独立启动） |
+| `template.html` | HTML 演示模板（含样式和交互，无内置导出按钮） |
+| `export_server.py` | 导出服务器（Python HTTP 服务，含 /export/pdf 和 /export/pptx 接口） |
+| `export_corporate_pdf.mjs` | PDF 导出脚本（Playwright + pdf-lib） |
+| `export_corporate_pptx.mjs` | PPTX 导出脚本（Playwright + pptxgenjs） |
+| `export-helper.py` | 导出辅助脚本 |
 | `package.json` | 依赖配置 |
 | `SKILL.md` | 本文件 |
 
