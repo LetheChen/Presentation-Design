@@ -1,6 +1,8 @@
 # 🏢 Presentation Design
 
-将文本内容快速转换为专业的企业汇报风格 HTML 演示页，支持画笔标注、配色切换、全屏演示，以及 **PDF / PPTX 一键导出**（无需任何服务器，开箱即用）。
+将文本内容快速转换为专业的企业汇报风格 HTML 演示页，支持画笔标注、配色切换、全屏演示，以及 **PDF / PPTX 一键导出**。
+
+**导出零配置**：双击 HTML 文件 → 点导出按钮 → 直接下载，无需安装任何软件。
 
 ---
 
@@ -13,34 +15,20 @@
 | 🎨 **5 套配色** | 企业蓝 / 极简青 / 暖金雅 / 深空黑 / 墨绿稳，实时切换 |
 | 📏 **3 档字号** | 紧凑 / 标准 / 宽松，实时切换 |
 | ⛶ **全屏演示** | 按 `F` 或点击按钮进入全屏 |
-| 📄 **PDF 导出** | 矢量格式，文字可搜索/复制，直接下载 |
-| 📊 **PPTX 导出** | 截图背景 + 透明文字层，双击可直接编辑，直接下载 |
+| 📄 **PDF 导出** | 点击"PDF"→浏览器打印对话框→另存为PDF，零配置 |
+| 📊 **PPTX 导出** | 点击"PPTX"→自动生成→直接下载，双击可在PowerPoint编辑 |
 
 ---
 
-## 🚀 快速开始
+## 🚀 立即使用（无需安装任何东西）
 
-### 首次安装（一次性）
+1. **生成 HTML**：告诉 OpenClaw「用 Presentation Design skill 生成演示页」，得到一个 `.html` 文件
+2. **双击打开**：用浏览器（Chrome / Edge 推荐）打开 HTML 文件
+3. **点导出**：
+   - **PDF**：点「📄 PDF」→ 浏览器弹出打印框 → 选「另存为 PDF」→ 保存
+   - **PPTX**：点「📊 PPTX」→ 等待生成 → 自动下载 → 用 PowerPoint 打开
 
-```bash
-# 安装 skill
-npx skills add LetheChen/Presentation-Design
-
-# 进入目录安装依赖
-cd ~/.openclaw/skills/Presentation-Design
-npm install
-npx playwright install chromium --with-deps
-```
-
-> **`npx skills add` 不会自动运行 npm install**，所以需要手动执行上面的 `npm install` 和 `playwright install` 步骤（只需一次）。
-
-### 使用导出功能
-
-1. 用 Presentation Design skill 生成 HTML 演示文件
-2. 双击用浏览器打开 HTML 文件
-3. 点击右下角 **⚙️ 调参** → **📄 PDF** 或 **📊 PPTX**，直接下载
-
-> 导出功能需要本地安装 **Python 3.8+** 和 **Node.js**（用于调用 Playwright 渲染）。
+> PPTX 导出需要联网（自动从 CDN 加载 pptxgenjs），PDF 导出完全离线可用。
 
 ---
 
@@ -49,25 +37,31 @@ npx playwright install chromium --with-deps
 ```
 Presentation-Design/
 ├── SKILL.md                    # OpenClaw skill 定义文件
-├── template.html               # HTML 演示模板（含全部样式、交互、导出逻辑）
-├── export_corporate_pdf.mjs   # PDF 导出脚本（手动导出用）
-├── export_corporate_pptx.mjs   # PPTX 导出脚本（手动导出用）
-├── export-helper.py            # 导出辅助脚本（HTML 内嵌调用）
-├── package.json                # 依赖配置
-└── README.md                   # 本文件
+├── template.html               # HTML 演示模板（含全部样式和交互）
+├── export_corporate_pdf.mjs  # PDF 导出脚本（可选，手动用）
+├── export_corporate_pptx.mjs  # PPTX 导出脚本（可选，手动用）
+├── export-helper.py           # 导出辅助脚本（可选）
+├── package.json               # 依赖配置（可选，手动用）
+└── README.md                  # 本文件
 ```
 
 ---
 
-## 🔧 依赖
+## 🔧 高级用法（可选）
 
-| 依赖 | 版本 | 用途 |
-|------|------|------|
-| `playwright` | ^1.52.0 | 浏览器渲染/截图 |
-| `pdf-lib` | ^1.17.1 | PDF 合并生成 |
-| `pptxgenjs` | ^3.12.0 | PPTX 生成 |
-| `Python 3` | 3.8+ | 启动 Playwright 渲染（必须） |
-| `Node.js` | 18+ | 运行导出脚本（必须） |
+如果需要更高质量的 PDF 导出（或无网络环境），可以安装依赖后手动导出：
+
+```bash
+# 安装依赖
+cd ~/.openclaw/skills/Presentation-Design
+npm install
+
+# 手动 PDF 导出
+node export_corporate_pdf.mjs --input "演示.html" --out "输出.pdf"
+
+# 手动 PPTX 导出
+node export_corporate_pptx.mjs --input "演示.html" --out "输出.pptx"
+```
 
 ---
 
@@ -91,20 +85,6 @@ Presentation-Design/
 | `Esc` | 显示/隐藏标注工具栏 |
 | `F` | 切换全屏模式 |
 | 双击 | 显示/隐藏标注工具栏 |
-
----
-
-## 📤 手动导出（可选）
-
-不想用 HTML 内嵌导出按钮？也可以手动调用脚本：
-
-```bash
-# PDF 导出
-node export_corporate_pdf.mjs --input "演示.html" --out "输出.pdf"
-
-# PPTX 导出
-node export_corporate_pptx.mjs --input "演示.html" --out "输出.pptx"
-```
 
 ---
 
