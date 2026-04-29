@@ -294,7 +294,7 @@ const { chromium } = require('playwright');
 
 ```bash
 # 1. 进入 skill 目录
-cd C:\Users\GS11DZ02279\.openclaw\skills\corporate-presentation
+cd Presentation-Design
 
 # 2. 安装依赖（只需一次）
 npm install
@@ -317,7 +317,7 @@ python export_server.py <html文件> [--port 8765] [--browser edge|chrome|none] 
 
 **PDF 导出：**
 ```bash
-cd C:\Users\GS11DZ02279\.openclaw\skills\corporate-presentation
+cd Presentation-Design
 node export_corporate_pdf.mjs --input "演示.html" --out "输出.pdf"
 ```
 
@@ -369,7 +369,7 @@ git commit -m "feat: Presentation Design v1.0.0
 
 ### 2. 创建 GitHub 仓库
 
-在 GitHub 网页上新建仓库，假设命名为 `corporate-presentation`，然后：
+在 GitHub 网页上新建仓库，假设命名为 `Presentation-Design`，然后：
 
 ```bash
 # 添加远程仓库（替换 YOUR_USERNAME 为你的 GitHub 用户名）
@@ -397,7 +397,7 @@ clawdhub publish . --slug Presentation-Design --name "Presentation Design" --ver
 
 ```bash
 # 从 GitHub 安装
-npx skills add your-username/Presentation-Design
+npx skills add LetheChen/Presentation-Design
 
 # 安装后进入目录安装依赖
 cd ~/.openclaw/skills/Presentation-Design

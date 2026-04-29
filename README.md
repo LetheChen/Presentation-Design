@@ -31,7 +31,7 @@ npx playwright install chromium --with-deps
 
 ```bash
 # 进入目录
-cd corporate-presentation
+cd Presentation-Design
 
 # 启动服务器（自动打开浏览器）
 python export_server.py /path/to/your/presentation.html
@@ -44,7 +44,7 @@ python export_server.py /path/to/your/presentation.html
 ## 📁 目录结构
 
 ```
-corporate-presentation/
+Presentation-Design/
 ├── SKILL.md                    # OpenClaw skill 定义文件
 ├── template.html               # HTML 演示模板（含全部样式和交互）
 ├── export_corporate_pdf.mjs   # PDF 导出脚本
@@ -106,10 +106,10 @@ node export_corporate_pptx.mjs --input "your_slides.html" --out "output.pptx"
 
 ```bash
 # 使用 npx 安装（推荐）
-npx skills add your-username/Presentation-Design
+npx skills add LetheChen/Presentation-Design
 
 # 或使用 clawdhub
-clawdhub install corporate-presentation
+clawdhub install Presentation-Design
 ```
 
 ---
