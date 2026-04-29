@@ -1,0 +1,22 @@
+{
+  "name": "Presentation-Design",
+  "version": "1.0.0",
+  "description": "企业汇报演示生成器 - 将文本内容转换为专业HTML演示页，支持画笔标注、配色切换、全屏演示、PDF/PPTX导出",
+  "main": "index.js",
+  "scripts": {
+    "install:deps": "npm install",
+    "pdf": "node export_corporate_pdf.mjs --input \"{{INPUT}}\" --out \"{{OUTPUT}}\"",
+    "pptx": "node export_corporate_pptx.mjs --input \"{{INPUT}}\" --out \"{{OUTPUT}}\""
+  },
+  "keywords": ["presentation", "slides", "html", "corporate", "report"],
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.52.0",
+    "pdf-lib": "^1.17.1",
+    "pptxgenjs": "^3.12.0"
+  },
+  "clawdhub": {
+    "install": ["node", "playwright"],
+    "bins": ["export_corporate_pdf.mjs", "export_corporate_pptx.mjs"]
+  }
+}
